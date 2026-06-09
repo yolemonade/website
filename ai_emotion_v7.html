@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Film Emotion Landscape</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d0c0a}
+body{background:var(--bg);color:#f0ebe0;font-family:'Cormorant Garamond',Georgia,serif;height:100vh;overflow:hidden;position:relative}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 18% 28%,rgba(210,140,60,.06)0%,transparent 50%),radial-gradient(ellipse at 82% 72%,rgba(170,45,30,.06)0%,transparent 50%);pointer-events:none}
+@keyframes fa{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% - 10px))}}
+@keyframes fb{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% + 9px))}}
+@keyframes fc{0%,100%{transform:translate(-50%,-50%)}33%{transform:translate(calc(-50% - 6px),calc(-50% - 5px))}66%{transform:translate(calc(-50% + 5px),calc(-50% + 6px))}}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:200;padding:16px 36px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(240,235,224,.07);background:rgba(13,12,10,.95);backdrop-filter:blur(6px)}
+.hd-left .eyebrow{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;color:#6a6358;margin-bottom:3px}
+.hd-left h1{font-size:18px;font-weight:300;letter-spacing:.05em}
+.hd-right{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.14em;color:#6a6358}
+#canvas{position:fixed;inset:62px 0 0 0;z-index:10}
+.kw{position:absolute;font-weight:300;line-height:1;white-space:nowrap;transform:translate(-50%,-50%);cursor:pointer;user-select:none;letter-spacing:-.02em;transition:opacity .45s ease, color .8s ease}
+.kw:hover{filter:brightness(1.5)}
+.kw.dimmed{opacity:.04;pointer-events:none}
+#detail{position:fixed;inset:62px 0 0 0;z-index:30;opacity:0;pointer-events:none;transition:opacity .55s ease;overflow:hidden}
+#detail.active{opacity:1;pointer-events:auto}
+#det-bg{position:absolute;inset:0;background:transparent;transition:background .7s ease}
+#det-kw{position:absolute;top:20px;left:26px;z-index:30}
+#det-kw-name{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.36);margin-bottom:3px}
+#det-kw-desc{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.1em;color:rgba(255,255,255,.28);line-height:1.4}
+#det-back{position:absolute;top:18px;right:24px;z-index:40;background:rgba(8,8,8,.42);border:1px solid rgba(255,255,255,.24);color:rgba(255,255,255,.9);font-family:'Jost',sans-serif;font-size:10px;font-weight:400;letter-spacing:.15em;text-transform:uppercase;padding:10px 15px;border-radius:999px;cursor:pointer;transition:.25s;backdrop-filter:blur(12px)}
+#det-back:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.6);transform:translateY(-1px)}
+
+/* ── 3-TIER WORD CASCADE: clearly separated vertically ── */
+#det-emotions{position:absolute;inset:0;z-index:8;pointer-events:none}
+.bem-wrap{position:absolute!important;left:50%!important;transform:translate(-50%,-50%)}
+/* Tier 1: sentiment label — upper area */
+.bem-wrap:first-child{top:22%!important}
+/* Tier 2: dominant emotion — center */
+.bem-wrap:nth-child(2){top:52%!important}
+/* Tier 3: secondary emotion — lower area */
+.bem-wrap:nth-child(3){top:76%!important}
+.bem{font-family:'Cormorant Garamond',serif;font-weight:500;line-height:.88;white-space:nowrap;letter-spacing:-.04em;text-align:center;text-shadow:0 14px 40px rgba(0,0,0,.62),0 0 28px rgba(0,0,0,.32);-webkit-text-stroke:.4px rgba(255,255,255,.14);opacity:.22;transition:opacity .7s ease,transform .7s cubic-bezier(.25,.46,.45,.94),filter .7s ease,text-shadow .7s ease}
+.bem-wrap:first-child .bem{font-size:clamp(90px,15vw,220px)!important;letter-spacing:.01em}
+.bem-wrap:nth-child(2) .bem{font-size:clamp(44px,7vw,95px)!important}
+.bem-wrap:nth-child(3) .bem{font-size:clamp(26px,4vw,52px)!important}
+
+/* ── SCATTERED COMMENTS ── */
+#det-comments{position:absolute;inset:0;z-index:18;pointer-events:none;overflow:hidden}
+.cmt-outer{position:absolute;transform-origin:center;will-change:transform}
+.cmt-outer.layer-back{z-index:4;opacity:.32;filter:blur(.25px)}
+.cmt-outer.layer-mid{z-index:9;opacity:.65}
+.cmt-outer.layer-front{z-index:18;opacity:1}
+.cmt-inner{max-width:260px;opacity:0;transform:translateY(12px)}
+.cmt-text{font-family:'Cormorant Garamond',serif;font-size:clamp(12px,1.15vw,17px);font-style:italic;font-weight:300;color:rgba(240,235,224,.68);line-height:1.38;text-shadow:0 2px 10px rgba(0,0,0,.82)}
+.layer-back .cmt-text{color:rgba(240,235,224,.42);font-size:clamp(10px,.9vw,13px)}
+.layer-mid .cmt-text{color:rgba(248,244,235,.75);text-shadow:0 2px 12px rgba(0,0,0,.95)}
+.layer-front .cmt-text{color:rgba(255,255,255,.96);font-size:clamp(15px,1.5vw,22px);font-weight:400;text-shadow:0 3px 14px rgba(0,0,0,1),0 0 3px rgba(0,0,0,1)}
+.cmt-film{font-family:'Jost',sans-serif;font-size:7.5px;font-weight:300;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,235,224,.32);margin-top:4px;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.layer-front .cmt-film{color:rgba(255,255,255,.6);font-weight:400}
+.layer-mid .cmt-film{color:rgba(255,255,255,.4)}
+.cmt-outer:nth-child(5n) .cmt-text{font-size:clamp(16px,1.6vw,23px);color:rgba(255,255,255,.9)}
+.cmt-outer:nth-child(8n) .cmt-text{font-size:clamp(19px,2vw,28px);font-weight:400;color:rgba(255,255,255,.94)}
+
+#det-stats{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:30;text-align:center;min-width:min(620px,76vw)}
+.det-dots{display:flex;gap:18px;justify-content:center;margin-bottom:7px}
+.det-dot-item{display:flex;align-items:center;gap:6px;font-family:'Jost',sans-serif;font-size:9px;font-weight:400;letter-spacing:.1em;color:rgba(255,255,255,.5)}
+.det-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.det-dot-pct{color:rgba(255,255,255,.86)}
+#det-insight{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.08em;color:rgba(255,255,255,.5);line-height:1.45}
+#controls{position:fixed;bottom:20px;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:0 30px;pointer-events:none;transition:opacity .4s}
+#controls.hide{opacity:0;pointer-events:none}
+#hint{font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.2em;color:rgba(240,235,224,.2)}
+#legend{display:flex;gap:16px}
+.leg{display:flex;align-items:center;gap:6px;font-family:'Jost',sans-serif;font-size:10px;font-weight:300;letter-spacing:.13em;color:rgba(240,235,224,.22)}
+.leg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+@media(max-width:760px){
+  #hdr{padding:12px 16px 10px}.hd-right{display:none}
+  #canvas{inset:56px 0 0 0}#detail{inset:56px 0 0 0}
+  #det-kw{top:14px;left:14px}#det-kw-desc{display:none}
+  #det-back{top:12px;right:12px;padding:9px 12px;font-size:9px}
+  .bem-wrap:first-child{top:18%!important}
+  .bem-wrap:nth-child(2){top:50%!important}
+  .bem-wrap:nth-child(3){top:76%!important}
+  .bem-wrap:first-child .bem{font-size:clamp(68px,20vw,110px)!important}
+  .bem-wrap:nth-child(2) .bem{font-size:clamp(34px,9vw,58px)!important}
+  .bem-wrap:nth-child(3) .bem{font-size:clamp(20px,5.5vw,36px)!important}
+  .cmt-inner{max-width:44vw}.cmt-text{font-size:11px!important}
+  #det-stats{bottom:10px;min-width:92vw}.det-dots{gap:9px;flex-wrap:wrap}#det-insight{display:none}
+}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div class="hd-left">
+    <div class="eyebrow">AI Film Sentiment Analysis · 2022–2026</div>
+    <h1>Audience Emotion Landscape</h1>
+  </div>
+  <div class="hd-right">8,732 comments · 9 films · 4 NLP models</div>
+</div>
+<div id="canvas"></div>
+<div id="detail">
+  <div id="det-bg"></div>
+  <div id="det-kw">
+    <div id="det-kw-name"></div>
+    <div id="det-kw-desc"></div>
+  </div>
+  <div id="det-emotions"></div>
+  <div id="det-comments"></div>
+  <div id="det-stats">
+    <div class="det-dots" id="det-dots"></div>
+    <div id="det-insight"></div>
+  </div>
+  <button id="det-back" type="button" onclick="goBack()">← 전체 감정으로</button>
+</div>
+<div id="controls">
+  <div id="hint">Click a theme to explore →</div>
+  <div id="legend">
+    <div class="leg"><div class="leg-dot" style="background:#d4a850"></div>Positive</div>
+    <div class="leg"><div class="leg-dot" style="background:#8a8478"></div>Neutral</div>
+    <div class="leg"><div class="leg-dot" style="background:#c04030"></div>Negative</div>
+  </div>
+</div>
+<script>
+const EC={Joy:'#f0c860',Disgust:'#e84c36',Fear:'#a890d0',Anger:'#e83020',Neutral:'#c8c0b4',Sadness:'#80a0d0',Surprise:'#e0a440'};
+const SBC={pos:'#f0c840',neu:'#c8c0b0',neg:'#f04030'};
+const SC2={pos:'#d4a850',neu:'#8a8478',neg:'#c04030'};
+const BG={
+  pos:'radial-gradient(ellipse at 50% 50%, rgba(148,92,4,.88)0%, rgba(13,12,10,.98)68%)',
+  neu:'radial-gradient(ellipse at 50% 50%, rgba(32,38,68,.88)0%, rgba(13,12,10,.98)68%)',
+  neg:'radial-gradient(ellipse at 50% 50%, rgba(110,12,4,.90)0%, rgba(13,12,10,.98)68%)',
+};
+const SENT_LABEL={pos:'POSITIVE',neu:'NEUTRAL',neg:'NEGATIVE'};
+
+const KW=[
+  {id:'Technology',label:'Technology',n:1604,fs:88,x:39,y:46,
+   dom:'neu',pos:41.3,neu:16.3,neg:42.4,
+   desc:'AI tools, prompts & technical production',
+   insight:'Curiosity and skepticism exist in equal measure',
+   tier1:['Surprise'],
+   comments:[
+     {t:'프롬프트 장난 아닐듯 😮',f:'재난문자'},{t:'How did they pull this off with AI?',f:'Total Pixel Space'},
+     {t:'AI영화라니 신기.. CG가 허술하다…',f:'중간계'},{t:'The tech is impressive but the result is underwhelming',f:'Thanksgiving Day'},
+     {t:'어떤 AI 모델을 사용하셨는지 궁금합니다',f:'제로'},{t:'Incredible what\'s possible with generative AI now',f:'Total Pixel Space'},
+     {t:'AI로 이런 영상을 만들다니 기술이 대단하다',f:'재난문자'},{t:'Still has a long way to go before it\'s truly convincing',f:'Critterz'},
+     {t:'영상 퀄리티가 아직 많이 부족하다',f:'중간계'},{t:'What rendering engine did they use for this?',f:'The Safe Zone'},
+     {t:'솔직히 예상보다 훨씬 자연스러워',f:'Lily'},{t:'The artifacts give it away every single time',f:'Thanksgiving Day'},
+     {t:'혹시 ai프로그램은 뭘로 쓰셨나요?',f:'제로'},{t:'AI 기술이 어디까지 발전하는 건지 놀랍다',f:'Lily'},
+     {t:'프롬프트 엔지니어링이 엄청났겠다',f:'재난문자'},{t:'It\'s technically AI but artistically human-guided',f:'Total Pixel Space'},
+   ],fa:'fa',fd:5.2,fdel:0},
+
+  {id:'Narrative',label:'Narrative',n:601,fs:62,x:67,y:34,
+   dom:'neu',pos:42.4,neu:14.0,neg:43.6,
+   desc:'Plot, story & scenario quality',
+   insight:'Story quality is the biggest dividing line',
+   tier1:['Joy'],
+   comments:[
+     {t:'스토리가 특이하고 절정일때 끝나는느낌이라 다음편이 기대돼요',f:'중간계'},
+     {t:'There doesn\'t seem to be much of anything. No story, no jokes, no theme.',f:'Thanksgiving Day'},
+     {t:'감동적인 스토리였어요',f:'Lily'},{t:'Characters had no depth whatsoever',f:'Thanksgiving Day'},
+     {t:'Surprisingly moving for an AI film',f:'Lily'},{t:'The narrative felt rushed and completely underdeveloped',f:'Thanksgiving Day'},
+     {t:'서사가 허술하지 않아서 좋았어요',f:'재난문자'},{t:'스토리가 너무 빈약해',f:'중간계'},
+     {t:'The story actually made me tear up a little',f:'Lily'},{t:'캐릭터에 감정이입이 안 됨',f:'중간계'},
+     {t:'More emotionally resonant than I expected from AI',f:'Total Pixel Space'},{t:'No real character development to speak of',f:'Critterz'},
+     {t:'결말이 너무 허무해',f:'재난문자'},{t:'이 정도 스토리면 충분히 볼 만하다',f:'재난문자'},
+     {t:'The pacing was completely off throughout',f:'Thanksgiving Day'},{t:'스토리가 AI가 쓴 것 같지 않아서 좋았어',f:'Lily'},
+   ],fa:'fb',fd:4.8,fdel:-1.5},
+
+  {id:'Artistic_Merit',label:'Artistic Merit',n:576,fs:58,x:18,y:58,
+   dom:'pos',pos:55.4,neu:8.3,neg:36.3,
+   desc:'Directing, aesthetics & production quality',
+   insight:'Strong craft can overcome AI skepticism',
+   tier1:['Joy','Surprise'],
+   comments:[
+     {t:'배우 연출이 넘 좋았어요',f:'중간계'},{t:'훌륭한 철학적 표현입니다',f:'Total Pixel Space'},
+     {t:'Artistically ambitious, technically flawed',f:'Critterz'},{t:'연출이 이렇게까지 섬세할 줄은 몰랐네요',f:'제로'},
+     {t:'The visual direction is genuinely impressive',f:'Total Pixel Space'},{t:'스토리나 연출 모두 별로임',f:'중간계'},
+     {t:'Stunning composition despite its AI origin',f:'제로'},{t:'색감이 정말 예쁘다',f:'Lily'},
+     {t:'The aesthetic choices feel intentional and coherent',f:'Total Pixel Space'},{t:'Looks like AI generated slop, not art',f:'Critterz'},
+     {t:'미장센이 꽤 신경 썼구나',f:'제로'},{t:'감독 연출이 별로임',f:'재난문자'},
+     {t:'Genuinely beautiful in places, jarring in others',f:'Lily'},{t:'비주얼은 좋은데 내용이 없어',f:'중간계'},
+     {t:'The cinematography alone makes it worth watching',f:'제로'},{t:'AI가 이런 미적 선택을 했다는 게 놀라워',f:'Total Pixel Space'},
+   ],fa:'fc',fd:6.1,fdel:-2.2},
+
+  {id:'Awe',label:'Awe',n:310,fs:52,x:50,y:20,
+   dom:'pos',pos:80.3,neu:2.6,neg:17.1,
+   desc:'"Wow" reactions — amazement at AI capability',
+   insight:'Total Pixel Space: the only film where wonder beats discomfort',
+   tier1:['Joy','Surprise'],
+   comments:[
+     {t:'Such a wonderful story ❤️ good job 👏',f:'Lily'},{t:'와 퀄미쳤다',f:'재난문자'},
+     {t:'Wait... this entire film was made by AI???',f:'Critterz'},{t:'진짜 놀랍다 이게 AI라니',f:'Total Pixel Space'},
+     {t:'I genuinely can\'t believe this was generated by AI',f:'Lily'},{t:'다음 작품도 너무 기대됩니다',f:'Lily'},
+     {t:'Absolutely mind-blowing',f:'The Safe Zone'},{t:'믿을 수가 없어 AI가 이걸 만들었다고?',f:'Total Pixel Space'},
+     {t:'소름 돋았다 진짜로',f:'재난문자'},{t:'This changes everything I thought about AI filmmaking',f:'The Safe Zone'},
+     {t:'어떻게 이게 가능하지',f:'Total Pixel Space'},{t:'I\'m actually tearing up from an AI film??',f:'Lily'},
+     {t:'The future is here and it\'s beautiful',f:'Total Pixel Space'},{t:'Human or AI, this made me feel something real',f:'Lily'},
+     {t:'완전 신기하다 다음 작품이 기대돼',f:'재난문자'},{t:'Never thought I\'d be moved by AI-generated content',f:'The Safe Zone'},
+   ],fa:'fa',fd:4.4,fdel:-0.8},
+
+  {id:'AI_Rejection',label:'AI Rejection',n:284,fs:50,x:74,y:65,
+   dom:'neg',pos:8.1,neu:4.6,neg:87.3,
+   desc:'Strong rejection of AI filmmaking itself',
+   insight:'87% negative — some felt offended the film was made at all',
+   tier1:['Disgust','Anger'],
+   comments:[
+     {t:'Ai is nothing and useless garbage',f:'Critterz'},{t:'최초 AI영화 시도는 좋았으나 결과는 최악',f:'중간계'},
+     {t:'boycott ai',f:'The Safe Zone'},{t:'이런 게 영화라고?',f:'Critterz'},
+     {t:'No soul, no heart, just algorithm outputs',f:'Thanksgiving Day'},{t:'AI는 예술을 흉내낼 수 없다',f:'중간계'},
+     {t:'This should not exist',f:'Thanksgiving Day'},{t:'Genuinely insulting to real filmmakers',f:'Thanksgiving Day'},
+     {t:'Hard pass. I\'ll support human artists only',f:'The Safe Zone'},{t:'AI로 만든 영화는 진짜 창의성이 없어',f:'중간계'},
+     {t:'Soulless content for a soulless age',f:'Critterz'},{t:'AI가 예술을 대체하려는 게 너무 싫어',f:'중간계'},
+     {t:'The death of cinema is being live-streamed',f:'Thanksgiving Day'},{t:'이런 영화가 극장에 걸릴 수 있다는 게 충격',f:'Critterz'},
+     {t:'I walked out halfway through',f:'Thanksgiving Day'},{t:'Real filmmakers deserve better than this',f:'The Safe Zone'},
+   ],fa:'fb',fd:5.6,fdel:-3.0},
+
+  {id:'Uncanny',label:'Uncanny',n:247,fs:46,x:25,y:72,
+   dom:'neg',pos:36.8,neu:5.3,neg:57.9,
+   desc:'Discomfort at "almost human but not quite" visuals',
+   insight:'EN viewers: disgust. KO viewers: fear. Same uncanny valley, different expression.',
+   tier1:['Disgust','Fear'],
+   comments:[
+     {t:'his bear paws turning into weird looking hands is so unsettling lol',f:'Thanksgiving Day'},
+     {t:'손가락이 제대로 표현안되서 무서움 ㅜ',f:'재난문자'},
+     {t:'Something about the movement feels deeply wrong',f:'Thanksgiving Day'},
+     {t:'Creepy in a way I can\'t explain',f:'Critterz'},
+     {t:'이상하게 불편한 느낌이 드는데 왜지',f:'재난문자'},
+     {t:'얼굴 표정이 사람같지 않아서 기분 나쁨',f:'중간계'},
+     {t:'The eyes don\'t track right and it\'s deeply disturbing',f:'Critterz'},
+     {t:'Why does it feel so wrong when it looks almost right?',f:'Thanksgiving Day'},
+     {t:'Uncanny valley is real and this film lives there',f:'Critterz'},
+     {t:'사람 같은데 사람이 아닌 느낌 소름',f:'중간계'},
+     {t:'The skin texture is off in a way I can\'t describe',f:'Thanksgiving Day'},
+     {t:'움직임이 어딘가 이상해 불쾌해',f:'재난문자'},
+     {t:'It looks human but moves like it\'s not',f:'Critterz'},
+     {t:'눈이 비어있는 것 같아서 소름',f:'재난문자'},
+     {t:'The facial expressions lag just enough to feel wrong',f:'Thanksgiving Day'},
+     {t:'완전 공포영화보다 더 무섭다',f:'중간계'},
+   ],fa:'fc',fd:5.9,fdel:-1.8},
+
+  {id:'Labor_Ethics',label:'Labor Ethics',n:51,fs:20,x:81,y:46,
+   dom:'neg',pos:15.7,neu:13.7,neg:70.6,
+   desc:'AI replacing human creative workers',
+   insight:'"Boycott AI" — ethical concern outweighs the film itself',
+   tier1:['Anger','Disgust'],
+   comments:[
+     {t:'다행이다. AI에 일자리 뺏기려면 40년은 걸리겠다 ㅋㅋ',f:'재난문자'},
+     {t:'boycott ai',f:'The Safe Zone'},
+     {t:'애니메이터들은 어떻게 되는 거야...',f:'중간계'},
+     {t:'Every frame made by AI is a frame a human wasn\'t paid for',f:'중간계'},
+     {t:'AI가 예술가들 일자리를 빼앗으면 안 된다',f:'중간계'},
+     {t:'This is a threat to human creativity',f:'The Safe Zone'},
+     {t:'사람들이 일자리를 잃을까봐 걱정돼',f:'중간계'},
+     {t:'The real victims here are the animators and artists',f:'Lily'},
+     {t:'AI will never replace true human artists',f:'The Safe Zone'},
+     {t:'AI 시대에 예술가의 역할이 뭔지 생각하게 됨',f:'재난문자'},
+     {t:'This is exactly what we warned about',f:'The Safe Zone'},
+     {t:'Human creativity cannot be automated away',f:'Lily'},
+     {t:'영화 산업 종사자들이 걱정된다',f:'중간계'},
+     {t:'We should be protecting artists, not replacing them',f:'The Safe Zone'},
+   ],fa:'fa',fd:6.5,fdel:-4.0},
+];
+
+/* Full-screen scatter grid — all positions used */
+const SC=[
+  {x:3,y:8,r:-3,s:.8},{x:22,y:6,r:2,s:.78},{x:44,y:7,r:-1,s:.82},{x:65,y:8,r:2,s:.79},{x:84,y:7,r:-2,s:.81},
+  {x:3,y:16,r:-3,s:.88},{x:18,y:14,r:2,s:.82},{x:36,y:15,r:-1,s:.9},{x:58,y:14,r:3,s:.84},{x:78,y:17,r:-2,s:.86},
+  {x:8,y:25,r:2,s:.92},{x:24,y:23,r:-4,s:1.04},{x:39,y:24,r:2,s:1.12},{x:53,y:22,r:-2,s:1.18},{x:68,y:24,r:3,s:1.05},{x:83,y:26,r:-2,s:.9},
+  {x:2,y:35,r:-2,s:.88},{x:17,y:34,r:3,s:1.08},{x:31,y:33,r:-3,s:1.18},{x:44,y:35,r:1,s:1.28},{x:56,y:32,r:-2,s:1.34},{x:68,y:35,r:3,s:1.2},{x:82,y:34,r:-1,s:1.02},
+  {x:7,y:45,r:3,s:.96},{x:21,y:44,r:-2,s:1.12},{x:34,y:43,r:2,s:1.26},{x:46,y:45,r:-3,s:1.42},{x:58,y:42,r:2,s:1.34},{x:70,y:46,r:-1,s:1.18},{x:84,y:44,r:3,s:.98},
+  {x:3,y:56,r:-1,s:.9},{x:17,y:55,r:2,s:1.04},{x:30,y:54,r:-3,s:1.18},{x:43,y:57,r:1,s:1.32},{x:55,y:53,r:-2,s:1.38},{x:67,y:56,r:3,s:1.2},{x:81,y:55,r:-2,s:1.02},
+  {x:8,y:65,r:2,s:.92},{x:22,y:64,r:-3,s:1.04},{x:38,y:66,r:1,s:1.1},{x:54,y:63,r:-2,s:1.06},{x:70,y:65,r:3,s:.94},{x:84,y:66,r:-1,s:.88},
+  {x:5,y:75,r:-2,s:.86},{x:20,y:74,r:2,s:.92},{x:36,y:76,r:-1,s:.98},{x:52,y:74,r:2,s:.94},{x:68,y:75,r:-3,s:.88},{x:83,y:76,r:1,s:.84},
+  {x:12,y:84,r:-2,s:.8},{x:30,y:83,r:2,s:.86},{x:50,y:85,r:-1,s:.82},{x:70,y:84,r:3,s:.78},{x:86,y:85,r:-2,s:.76},
+  {x:4,y:92,r:2,s:.72},{x:22,y:91,r:-2,s:.76},{x:42,y:93,r:1,s:.74},{x:62,y:92,r:-1,s:.72},{x:80,y:93,r:2,s:.70},
+];
+
+let view='overview', activeKw=null, tmr=null;
+const canvas=document.getElementById('canvas');
+const detail=document.getElementById('detail');
+const detBg=document.getElementById('det-bg');
+const controls=document.getElementById('controls');
+
+function init(){
+  KW.forEach(kw=>{
+    const el=document.createElement('div');
+    el.className='kw';el.id='kw-'+kw.id;
+    el.textContent=kw.label;
+    el.style.cssText=`left:${kw.x}%;top:${kw.y}%;font-size:${kw.fs}px;color:rgba(240,235,224,0.52);animation:${kw.fa} ${kw.fd}s ease-in-out infinite ${kw.fdel}s;`;
+    el.addEventListener('click',()=>selectKw(kw));
+    canvas.appendChild(el);
+  });
+}
+
+function selectKw(kw){
+  if(view!=='overview')return;
+  view='keyword';activeKw=kw;
+  document.querySelectorAll('.kw').forEach(w=>{w.style.animation='none';w.classList.add('dimmed')});
+
+  document.getElementById('det-kw-name').textContent=kw.label;
+  document.getElementById('det-kw-desc').textContent=kw.desc;
+  setTimeout(()=>detBg.style.background=BG[kw.dom],50);
+  detail.classList.add('active');
+  controls.classList.add('hide');
+
+  /* Cascade: sentiment label → emotion 1 → emotion 2 */
+  const words=[SENT_LABEL[kw.dom],...kw.tier1];
+  const colors=[SBC[kw.dom],...kw.tier1.map(n=>EC[n]||'#f0ebe0')];
+  const iOps=[0.90,0.80,0.65];
+  const sOps=[0.42,0.36,0.27];
+
+  const ec=document.getElementById('det-emotions');ec.innerHTML='';
+  words.forEach((name,i)=>{
+    const wrap=document.createElement('div');wrap.className='bem-wrap';
+    const el=document.createElement('div');el.className='bem';
+    el.textContent=name;
+    el.style.color=colors[i];
+    el.style.opacity='0';
+    el.style.transform='translateY(22px) scale(.988)';
+    wrap.appendChild(el);ec.appendChild(wrap);
+    setTimeout(()=>{
+      el.style.transition='opacity .7s ease,transform .7s cubic-bezier(.25,.46,.45,.94),filter .7s ease,text-shadow .7s ease';
+      el.style.opacity=iOps[i];
+      el.style.transform='translateY(0) scale(1)';
+      el.style.textShadow='0 18px 50px rgba(0,0,0,.72), 0 0 22px rgba(255,255,255,.08)';
+    },320+i*200);
+    setTimeout(()=>{
+      el.style.opacity=sOps[i];
+      el.style.filter='saturate(.9) blur(.1px)';
+      el.style.textShadow='0 14px 36px rgba(0,0,0,.6)';
+    },1800+i*120);
+  });
+
+  /* All SC positions — fill the entire screen */
+  const cc=document.getElementById('det-comments');cc.innerHTML='';
+  const shuffled=[...kw.comments].sort(()=>Math.random()-.5);
+  SC.forEach((pos,i)=>{
+    const c=shuffled[i%shuffled.length];
+    const outer=document.createElement('div');
+    const layer=i%7===0||i%7===3?'front':(i%3===0?'mid':'back');
+    outer.className='cmt-outer layer-'+layer;
+    outer.style.cssText=`left:${pos.x}%;top:${pos.y}%;transform:rotate(${pos.r}deg) scale(${pos.s||1});`;
+    const inner=document.createElement('div');inner.className='cmt-inner';
+    inner.style.transition=`opacity .45s ease ${.2+(i%11)*.045}s, transform .45s ease ${.2+(i%11)*.045}s`;
+    inner.innerHTML=`<div class="cmt-text">"${c.t}"</div><div class="cmt-film">— ${c.f}</div>`;
+    outer.appendChild(inner);cc.appendChild(outer);
+    requestAnimationFrame(()=>setTimeout(()=>{
+      inner.style.opacity='1';inner.style.transform='translateY(0)';
+    },2000+60+i*18));
+  });
+
+  /* Stats */
+  const dc=document.getElementById('det-dots');dc.innerHTML='';
+  [{l:'Positive',v:kw.pos,c:'#d4a850'},{l:'Neutral',v:kw.neu,c:'#8a8478'},{l:'Negative',v:kw.neg,c:'#c04030'}]
+  .forEach(s=>{
+    const it=document.createElement('div');it.className='det-dot-item';
+    it.innerHTML=`<div class="det-dot" style="background:${s.c}"></div><span>${s.l}</span><span class="det-dot-pct">${s.v.toFixed(0)}%</span>`;
+    dc.appendChild(it);
+  });
+  document.getElementById('det-insight').textContent=kw.insight;
+}
+
+function goBack(){
+  if(view!=='keyword')return;
+  const kw=activeKw;
+  view='overview';activeKw=null;
+  detBg.style.background='transparent';
+  detail.classList.remove('active');
+  controls.classList.remove('hide');
+  if(tmr)clearTimeout(tmr);
+  tmr=setTimeout(()=>{
+    document.querySelectorAll('.kw').forEach(w=>{
+      w.classList.remove('dimmed');
+      const k=KW.find(d=>'kw-'+d.id===w.id);
+      if(k)w.style.animation=`${k.fa} ${k.fd}s ease-in-out infinite ${k.fdel}s`;
+    });
+    const kwEl=document.getElementById('kw-'+kw.id);
+    if(kwEl)setTimeout(()=>kwEl.style.color=SC2[kw.dom],200);
+    tmr=null;
+  },420);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')goBack()});
+init();
+</script>
+</body>
+</html>
